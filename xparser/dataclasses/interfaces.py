@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from xparser.dataclasses.datatypes import OrderBook, Symbol, Order
+from functools import lru_cache
 
 
 class IOrderParser(ABC):
@@ -11,7 +12,11 @@ class IOrderParser(ABC):
         ...
 
     @abstractmethod
-    async def get_order_book(self, symbol: Symbol) -> OrderBook:
+    def subscribe(self, symbol: Symbol):
+        ...
+
+    @abstractmethod
+    async def loop(self):
         ...
 
     @abstractmethod
@@ -32,7 +37,16 @@ class IOrderParser(ABC):
             ), to_parse.get('asks')))
         )
 
+    @lru_cache
+    def prepared_data(self, symbol: Symbol):
+        from xparser.dataclasses import Platforms
+        from xparser.database.models import Database
+        spot_id = Platforms[self.platform].value
+        u_id = spot_id * 40
+        model = Database.table_factory((symbol.first + symbol.second).lower())
+        return spot_id, u_id, model
+
     @staticmethod
     @abstractmethod
-    def callback(self, *args, **kwargs):
+    def callback(self, response, *args):
         ...
