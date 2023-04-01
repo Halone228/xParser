@@ -1,11 +1,16 @@
 from dataclasses import dataclass
-from xparser.dataclasses.interfaces import IOrderParser
 
 
 @dataclass(slots=True)
 class Symbol:
     first: str
     second: str
+
+    def __str__(self):
+        return f'{self.first}-{self.second}'
+
+    def __hash__(self):
+        return hash(self.first+self.second)
 
 
 @dataclass(slots=True)
@@ -24,9 +29,3 @@ class OrderBook:
 class PlatformOrder:
     platform: str
     book: OrderBook
-
-
-@dataclass(slots=True)
-class OrdersCluster:
-    platforms_instance: dict[str, IOrderParser]
-    orders_books: list[PlatformOrder]

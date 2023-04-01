@@ -1,9 +1,6 @@
-from enum import Enum, auto
+from xparser.dataclasses.datatypes import *
 
 
-class Platforms(Enum):
-    binance = auto()
-    kucoin = auto()
-    huobi = auto()
+
 
 
