@@ -19,6 +19,7 @@ aiopg = "^1.4.0"
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.7"}
 loguru = "^0.6.0"
 asyncpg = "^0.27.0"
+bpython = "^0.24"
 
 
 [build-system]
@@ -27,3 +28,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 dev = "xparser.main:run_dev"
+test1 = "tests.test_1:run_tests"

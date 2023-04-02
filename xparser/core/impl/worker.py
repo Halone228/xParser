@@ -113,20 +113,16 @@ class HuobiParser:
         pass
 
     def subscribe(self, symbol: Symbol):
-        pass
+        self.symbols 
 
     async def loop(self):
         pass
 
     @staticmethod
-    def callback(self, response, *args):
-        pass
+    def callback(response, *args):
+        
 
-    def __init__(self,access_key, secret_key):
-        from huobi.client.market import MarketClient, DepthStep
-        self.client = MarketClient()
-        self.depth_step = DepthStep
-
-    async def get_order_book(self, symbol: Symbol) -> OrderBook:
-        res = self.client.sub_pricedepth()
-        return self.parse_book(res.get('tick'))
+    def __init__(self,loop):
+        from halone.clients import HuobiWebsocket
+        self.huobi_socket = HuobiWebsocket(loop, self.callback)
+        self.symbols = {}
