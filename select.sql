@@ -10,4 +10,4 @@ SELECT benefit, pr0, pr1, spid0, spid1, ask from LATERAL(
             INNER JOIN spot s1 ON s0.spot_id < s1.spot_id
             AND s0.symbol_id = s1.symbol_id
             AND s0.ask = s1.ask)
-    X0) X1;
+    X0) X1 WHERE benefit > 1;

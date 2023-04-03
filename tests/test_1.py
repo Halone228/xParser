@@ -1,4 +1,4 @@
-from halone.clients.hiobi import HuobiWebsocket
+from halone.clients import HuobiWebsocket
 
 async def test1():
     import asyncio

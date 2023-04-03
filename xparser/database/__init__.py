@@ -16,7 +16,7 @@ class Database:
         url = f'postgresql+asyncpg://{getenv("USER")}:{getenv("PASSWORD")}'\
                                   f'@{getenv("HOST")}/{getenv("DATABASE")}'
         logger.info(f'Start database with url :: {url}')
-        cls.engine = create_async_engine(url)
+        cls.engine = create_async_engine(url, echo=bool(getenv('debug','')))
         async with cls.engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)

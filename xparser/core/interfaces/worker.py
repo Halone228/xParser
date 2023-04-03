@@ -22,8 +22,9 @@ class IOrderParser(ABC):
     async def loop(self):
         ...
 
+    @classmethod
     @abstractmethod
-    async def create(self,**kwargs):
+    async def create(cls, **kwargs):
         ...
 
     @staticmethod
@@ -61,7 +62,6 @@ class IOrderParser(ABC):
             )
         )
 
-    @staticmethod
     @abstractmethod
-    def callback(self, response, *args):
+    async def callback(self, response, *args):
         ...

@@ -2,11 +2,13 @@ import asyncio
 from functools import lru_cache
 from itertools import chain
 
-from xparser.dataclasses.datatypes import Symbol, OrderBook
+import loguru
+
+from xparser.dataclasses.datatypes import Symbol
 from xparser.core.interfaces import IOrderParser
 from xparser.database import Database, Spot
 from typing import Iterable
-from loguru import logger
+import loguru
 
 
 class BinanceOrderParser(IOrderParser):
@@ -69,7 +71,6 @@ class KuCoinOrderParser(IOrderParser):
 
     async def loop(self):
         import asyncio
-        from kucoin.asyncio.websockets import KucoinSocketManager
         while True:
             await asyncio.sleep(20)
 
@@ -107,22 +108,92 @@ class KuCoinOrderParser(IOrderParser):
         return "kucoin"
 
 
-class HuobiParser:
+class HuobiParser(IOrderParser):
     @classmethod
-    def platform(cls):
-        pass
+    async def create(cls, loop):
+        self = cls(loop)
+        return self
 
-    def subscribe(self, symbol: Symbol):
-        self.symbols 
+    @classmethod
+    @property
+    def platform(cls):
+        return "huobi"
+
+    async def subscribe(self, symbol: Symbol):
+        from asyncio import sleep
+        symbol_huobi = (symbol.first+symbol.second).lower()
+        self.symbols[symbol_huobi] = symbol
+        await self.huobi_socket.subscribe(f'market.{symbol_huobi}.bbo')
+        await sleep(1)
 
     async def loop(self):
-        pass
+        await self.huobi_socket.loop()
 
-    @staticmethod
-    def callback(response, *args):
-        
+    async def callback(self,response, *args):
+        data = response['tick']
+        spot_id, symbol_id = self.prepared_data(self.symbols[data['symbol']])
+        await Database.add_to_database(
+            spots=[
+                Spot(
+                    spot_id=spot_id,
+                    symbol_id=symbol_id,
+                    ask=True,
+                    price=data['ask']
+                ),
+                Spot(
+                    spot_id=spot_id,
+                    symbol_id=symbol_id,
+                    ask=False,
+                    price=data['bid']
+                )
+            ]
+        )
 
     def __init__(self,loop):
         from halone.clients import HuobiWebsocket
         self.huobi_socket = HuobiWebsocket(loop, self.callback)
         self.symbols = {}
+
+
+class PoloniexParser(IOrderParser):
+    @classmethod
+    @property
+    def platform(cls):
+        return "poloniex"
+
+    async def subscribe(self, symbol: Symbol):
+        symb = f"{symbol.first}_{symbol.second}"
+        self.symbols[symb] = symbol
+        await self.socket.subscribe(symb)
+
+    async def loop(self):
+        await self.socket.loop()
+
+    @classmethod
+    async def create(cls, loop, **kwargs):
+        return cls(loop)
+
+    @loguru.logger.catch
+    async def callback(self, response, *args):
+        data_ = response['data']
+        for data in data_:
+            spot_id, symbol_id = self.prepared_data(self.symbols[data['symbol']])
+            await Database.add_to_database(
+                spots=(Spot(
+                    spot_id=spot_id,
+                    symbol_id=symbol_id,
+                    price=i[0],
+                    ask=i[1]
+                ) for i in chain(
+                    ((float(k[0]), True) for k in data['asks']),
+                    ((float(k[0]), False) for k in data['bids'])
+                ))
+            )
+
+    def __init__(self, loop):
+        from halone.clients import PoloPublicWebsocket
+        from asyncio import AbstractEventLoop
+        self.socket = PoloPublicWebsocket(self.callback)
+        self.symbols = {}
+        self.event_loop: AbstractEventLoop = loop
+        self.tasks = []
