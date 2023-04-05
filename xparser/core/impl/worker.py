@@ -196,4 +196,47 @@ class PoloniexParser(IOrderParser):
         self.socket = PoloPublicWebsocket(self.callback)
         self.symbols = {}
         self.event_loop: AbstractEventLoop = loop
-        self.tasks = []
+
+
+class MXCParser(IOrderParser):
+
+    def __init__(self):
+        from halone.clients import MXCMarketWebsocket
+        self.symbols = {}
+        self.socket = MXCMarketWebsocket(self.callback)
+
+    @classmethod
+    @property
+    def platform(cls):
+        return "mxc"
+
+    async def subscribe(self, symbol: Symbol):
+        self.symbols[f"{symbol.first}{symbol.second}"] = symbol
+        await self.socket.subscribe(f"{symbol.first}{symbol.second}")
+
+    async def loop(self):
+        await self.socket.loop()
+
+    @classmethod
+    async def create(cls, **kwargs):
+        return cls()
+
+    @loguru.logger.catch
+    async def callback(self, response, *args):
+        spot_id, symbol_id = self.prepared_data(
+            self.symbols[response['s']]
+        )
+        response = response['d']
+        await Database.add_to_database(
+            spots=(
+                Spot(
+                    spot_id=spot_id,
+                    symbol_id=symbol_id,
+                    price=i[0],
+                    ask=i[1]
+                ) for i in chain(
+                    ((float(k['p']), True) for k in response.get('asks', [])),
+                    ((float(k['p']), False) for k in response.get('bids', []))
+                )
+            )
+        )

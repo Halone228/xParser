@@ -13,7 +13,7 @@ class Database:
 
     @classmethod
     async def init(cls):
-        url = f'postgresql+asyncpg://{getenv("USER")}:{getenv("PASSWORD")}'\
+        url = f'postgresql+asyncpg://{getenv("_USERNAME_")}:{getenv("PASSWORD")}'\
                                   f'@{getenv("HOST")}/{getenv("DATABASE")}'
         logger.info(f'Start database with url :: {url}')
         cls.engine = create_async_engine(url, echo=bool(getenv('debug','')))

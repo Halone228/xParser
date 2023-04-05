@@ -1,12 +1,14 @@
-from halone.clients import HuobiWebsocket
+from halone.clients import MXCMarketWebsocket
 
 async def test1():
     import asyncio
     loop = asyncio.get_event_loop()
     async def call(resp):
         print(resp)
-    huobi = HuobiWebsocket(loop, call)
-    await huobi.subscribe('market.btcusdt.bbo')
+    huobi = MXCMarketWebsocket(call)
+    print(2)
+    await huobi.subscribe('BTCUSDT')
+    print(1)
     await huobi.loop()
 
 

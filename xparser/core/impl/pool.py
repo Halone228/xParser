@@ -58,7 +58,7 @@ class Pool(IPool):
 
         async def get_result():
             while True:
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(1)
                 res = await Database.proceed_database()
                 print(res) if res else None
         self.tasks.append(self.event_loop.create_task(get_result()))
