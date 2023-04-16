@@ -1,5 +1,6 @@
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import UUID, Column, DOUBLE_PRECISION, SMALLINT, BOOLEAN
+from sqlalchemy import UUID, Column, DOUBLE_PRECISION, SMALLINT, BOOLEAN, BIGINT, DateTime
+from sqlalchemy import select
 from uuid import uuid4
 
 
@@ -27,4 +28,18 @@ class SpotResult(Base):
     price2 = Column(DOUBLE_PRECISION, unique=False)
     spot_id1 = Column(SMALLINT, unique=False)
     spot_id2 = Column(SMALLINT, unique=False)
+    symbol_id = Column(SMALLINT)
     ask = Column(BOOLEAN, unique=False)
+
+
+class Users(Base):
+    __tablename__ = "users"
+    user_id = Column(BIGINT, primary_key=True)
+    has_sub = Column(BOOLEAN, default=False)
+    sub_end = Column(DateTime, nullable=True)
+
+    @classmethod
+    async def get_all_subed(cls):
+        from xparser.database import Database
+        return await Database.execute(select(Users).where(cls.has_sub == True))
+

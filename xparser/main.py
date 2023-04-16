@@ -9,6 +9,7 @@ def run_dev():
     log = Logger(__name__, level=INFO)
     load_dotenv(Path(getcwd()).joinpath('main.env'))
     from xparser.core.impl import Pool
+    import halone.bot
     loop = asyncio.get_event_loop()
     print('Start pool')
     pool = Pool(loop=loop)

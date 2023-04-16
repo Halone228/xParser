@@ -1,2 +1,3 @@
-from xparser.core.interfaces.worker import *
-from xparser.core.interfaces.pool import *
+from .worker import *
+from .pool import *
+from .platform import *

@@ -29,3 +29,9 @@ class OrderBook:
 class PlatformOrder:
     platform: str
     book: OrderBook
+
+
+@dataclass(slots=True)
+class CoinFee:
+    fee: float
+    network_info: dict

@@ -1,15 +1,17 @@
-from xparser.database.models import Spot, Base, SpotResult
+from xparser.database.models import *
 from sqlalchemy.ext.asyncio import AsyncEngine,create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy import text, delete
 from os import getenv
 from typing import Iterable
 from loguru import logger
 from functools import lru_cache
+from halone.patterns import SpotResultPublisher
 
 
 class Database:
     engine: AsyncEngine = ...
     session_maker: async_sessionmaker[AsyncSession] = ...
+    publisher: SpotResultPublisher = SpotResultPublisher()
 
     @classmethod
     async def init(cls):
@@ -23,6 +25,7 @@ class Database:
         cls.session_maker = async_sessionmaker(bind=cls.engine)
 
     @classmethod
+    @logger.catch
     async def add_to_database(cls, spots: Iterable[Spot]):
         async with cls.session_maker() as session:
             session.add_all(
@@ -31,6 +34,7 @@ class Database:
             await session.commit()
 
     @classmethod
+    @logger.catch
     async def proceed_database(cls):
         query = text(cls.get_select_query())
         async with cls.session_maker() as session:
@@ -38,19 +42,24 @@ class Database:
             await session.execute(delete(Spot))
             await session.commit()
             res = result.fetchall()
-            session.add_all(
-                (
-                    SpotResult(
+            result = [
+                SpotResult(
                         benefit=i[0],
                         price1=i[1],
                         price2=i[2],
                         spot_id1=i[3],
                         spot_id2=i[4],
-                        ask=i[5]
-                    ) for i in res
+                        symbol_id=i[5],
+                        ask=i[6]
+                    ) for i in res]
+            if res:
+                await cls.publisher.new_best_result(result)
+                session.add_all(
+                    (
+                        result
+                    )
                 )
-            )
-            await session.commit()
+                await session.commit()
 
     @staticmethod
     @lru_cache
@@ -59,4 +68,9 @@ class Database:
         from os import getcwd
         with open(Path(getcwd()).joinpath('select.sql')) as f:
             return f.read()
+
+    @classmethod
+    async def execute(cls, stmt) -> Iterable[Base]:
+        async with cls.session_maker() as conn:
+            return await conn.execute(stmt)
 
